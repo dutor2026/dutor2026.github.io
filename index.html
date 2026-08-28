@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuToR: Dual Token Reduction for Efficient Feed-Forward 3D Reconstruction</title>
+<style>
+  :root {
+    --navy: #1a3a5c;
+    --blue: #2d6a9f;
+    --light: #f5f7fa;
+    --gray: #666;
+    --border: #ddd;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #222;
+    background: #fff;
+    line-height: 1.7;
+  }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  /* Animated logo */
+  .logo-wrap {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
+    position: relative;
+  }
+  .logo-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .logo-ring.outer {
+    width: 80px; height: 80px; top: 0; left: 0;
+    border-color: rgba(255,255,255,0.2);
+    animation: spin 8s linear infinite;
+  }
+  .logo-ring.mid {
+    width: 52px; height: 52px; top: 14px; left: 14px;
+    border-color: rgba(255,255,255,0.4);
+    animation: spin 6s linear infinite reverse;
+  }
+  .logo-ring.inner {
+    width: 24px; height: 24px; top: 28px; left: 28px;
+    border: 2px solid rgba(255,255,255,0.8);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .logo-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4fc3f7;
+  }
+  .logo-dot.d1 { top: -3px; left: 37px; animation: orbit 8s linear infinite; transform-origin: 3px 43px; }
+  .logo-dot.d2 { top: 37px; left: 74px; animation: orbit 8s linear infinite 2s; transform-origin: -34px 3px; }
+  .logo-dot.d3 { top: 74px; left: 37px; animation: orbit 8s linear infinite 4s; transform-origin: 3px -34px; }
+  .logo-dot.d4 { top: 37px; left: -3px; animation: orbit 8s linear infinite 6s; transform-origin: 43px 3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+  @keyframes orbit {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Hero */
+  .hero {
+    background: var(--navy);
+    color: #fff;
+    padding: 60px 0 40px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .hero .authors { font-size: 1.1em; opacity: 0.85; margin-bottom: 8px; }
+  .hero .affil { font-size: 0.95em; opacity: 0.7; }
+  .hero .badges { margin-top: 16px; }
+  .hero .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    margin: 0 4px;
+  }
+
+  /* Teaser */
+  .teaser { padding: 30px 0; text-align: center; }
+  .teaser img { width: 100%; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+  .teaser .caption { font-size: 0.9em; color: var(--gray); margin-top: 10px; text-align: left; }
+
+  /* Sections */
+  section { padding: 40px 0; border-top: 1px solid var(--border); }
+  section h2 {
+    color: var(--navy);
+    font-size: 1.5em;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  section p { margin-bottom: 12px; }
+
+  /* Method cards */
+  .cards { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+  .card {
+    flex: 1;
+    min-width: 260px;
+    background: var(--light);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .card h3 { color: var(--blue); font-size: 1.1em; margin-bottom: 8px; }
+  .card p { font-size: 0.92em; color: #444; }
+
+  /* Figures */
+  figure { margin: 20px 0; text-align: center; }
+  figure img { width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  figure figcaption { font-size: 0.88em; color: var(--gray); margin-top: 8px; text-align: left; }
+
+  /* Results table */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.92em;
+  }
+  .results-table th {
+    background: var(--navy);
+    color: #fff;
+    padding: 8px 12px;
+    text-align: center;
+    font-weight: 500;
+  }
+  .results-table td {
+    padding: 8px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .results-table tr:nth-child(even) { background: var(--light); }
+
+  /* Stats */
+  .stats { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+  .stat {
+    flex: 1;
+    min-width: 180px;
+    text-align: center;
+    background: var(--light);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .stat .num { font-size: 2em; font-weight: 700; color: var(--blue); }
+  .stat .label { font-size: 0.85em; color: var(--gray); margin-top: 4px; }
+
+  /* BibTeX */
+  .bibtex {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82em;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+  }
+
+  /* Footer */
+  footer {
+    background: var(--navy);
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+    padding: 24px 0;
+    font-size: 0.85em;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 1.5em; }
+    .cards, .stats { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="container">
+    <h1>DuToR: Dual Token Reduction<br>for Efficient Feed-Forward 3D Reconstruction</h1>
+    <div class="authors">Anonymous Submission to IEEE VR 2027</div>
+    <div class="affil">Anonymous Institution</div>
+    <div class="badges">
+      <span class="badge">Training-Free</span>
+      <span class="badge">Model-Agnostic</span>
+    </div>
+  </div>
+</div>
+
+<!-- Teaser -->
+<div class="teaser">
+  <div class="container">
+    <img src="fig/teaser.png" alt="DuToR overview">
+    <div class="caption">
+      <b>(1)</b> Feed-forward 3D reconstruction transformers process all S input views jointly via global attention, whose cost scales <em>quadratically</em> with the total token count.
+      <b>(2)</b> DuToR applies Farthest Point Sampling on frame descriptors to select K diverse keyframes (green ✓) and drop redundant ones (red ✗).
+      <b>(3)</b> Within each kept frame, a foveated K-means module partitions the patch grid into concentric rings, allocating higher token budget to the central viewing region.
+      <b>(4)</b> Together, these two stages reduce global attention from <b>quadratic to linear</b> with <b>no retraining</b>.
+    </div>
+  </div>
+</div>
+
+<!-- Abstract -->
+<section>
+  <div class="container">
+    <h2>Abstract</h2>
+    <p>
+      Feed-forward 3D reconstruction transformers jointly predict camera poses, point maps, and depth maps from multiple views in a single forward pass, but their global attention scales quadratically with token count.
+      This latency is the key barrier to running such models on-device for augmented and virtual reality (AR/VR), where strict motion-to-photon latency budgets apply.
+    </p>
+    <p>
+      We propose <b>DuToR</b>, a training-free framework that exploits redundancy at two levels — across frames and within frames — using only the model's own intermediate features, with no external scene descriptor.
+      For inter-frame selection, Farthest Point Sampling on frame descriptors selects K diverse frames, while connectivity scoring preserves geometric overlap and dynamically restores dropped frames.
+      For intra-frame selection, a fovea ring budget allocation partitions the patch grid into concentric rings and allocates higher cluster density to the center, and per-layer K-means clustering on key features selects representatives.
+      Together, these reduce global attention from quadratic to linear in the number of selected tokens, without retraining.
+    </p>
+    <p>
+      Experiments across two models (DA3, VGGT) and four benchmarks show DuToR achieves <b>44% inference speedup</b> on 90-frame sequences and <b>3.8× speedup</b> on 480-frame sequences with less than 1% ATE degradation, advancing feed-forward 3D reconstruction toward the latency targets of on-device AR/VR.
+    </p>
+  </div>
+</section>
+
+<!-- Problem -->
+<section>
+  <div class="container">
+    <h2>Problem & Motivation</h2>
+    <p>
+      Visual geometry transformers such as DUSt3R, MASt3R, VGGT, π³, and Depth Anything 3 jointly predict camera poses, point maps, and depth maps from multiple views in a single forward pass.
+      However, their global attention layers scale <b>quadratically</b> with the total number of patch tokens across all views, making inference prohibitively expensive as the number of views grows.
+    </p>
+    <p>
+      This latency is one of the key barriers to deploying these models on-device for AR/VR, where motion-to-photon latency must remain low to avoid perceptible lag and cybersickness, and head-mounted displays impose power and thermal constraints that rule out cloud offloading.
+    </p>
+    <p>
+      Existing token reduction methods either merge similar tokens (requiring an unmerge step) or prune unimportant ones, but do not exploit the <b>two-level structure</b> of multi-view attention: redundancy exists both <em>across frames</em> (many views are similar) and <em>within frames</em> (many patch tokens carry similar information).
+    </p>
+  </div>
+</section>
+
+<!-- Method -->
+<section>
+  <div class="container">
+    <h2>Method</h2>
+    <p>
+      DuToR is a training-free framework that reduces the computational cost of global attention by exploiting redundancy at two levels. A key design choice: all S frames retain their full queries (Q); only the KV sequence is reduced. This preserves dense predictions for depth and point maps without the unmerge step that token merging methods require.
+    </p>
+
+    <div class="cards">
+      <div class="card">
+        <h3>① Inter-Frame Selection (FPS)</h3>
+        <p>Farthest Point Sampling on frame descriptors (derived from the model's own intermediate ViT features — no external model needed) selects K diverse keyframes that maximize scene coverage. A connectivity scoring gate using ORB matching monitors geometric overlap between keyframes and restores dropped frames when gaps are detected.</p>
+      </div>
+      <div class="card">
+        <h3>② Intra-Frame Selection (Foveated K-Means)</h3>
+        <p>Within each kept frame, K-means clustering on key features selects K_c representative tokens. The patch grid is partitioned into concentric fovea rings with a hard per-ring cluster budget, allocating higher density to the center. A camera-conditioned attention score refines cluster representatives.</p>
+      </div>
+    </div>
+
+    <figure>
+      <img src="fig/arch_figure.png" alt="DuToR architecture">
+      <figcaption><b>Architecture overview.</b> DuToR reduces the KV sequence at two levels: inter-frame (FPS selects diverse keyframes) and intra-frame (foveated K-means selects representative tokens per frame). All queries are retained, preserving dense predictions without an unmerge step.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="fig/fovea_rings_3r_70-20-10.png" alt="Foveated token selection">
+      <figcaption><b>Foveated token selection.</b> Left: The patch grid is partitioned into R=3 concentric rings by normalized elliptical distance. The center ring (green) is spatially small but receives the largest cluster budget. Right: Per-ring cluster allocation showing cluster density is highest in the center, preserving central visual acuity.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="fig/frame_restore.png" alt="Connectivity scoring for frame restoration">
+      <figcaption><b>Connectivity scoring for frame restoration.</b> Top: FPS selects K keyframes (green); dropped frames (red) are not processed. Middle: Sparse ORB matching between sequential keyframes computes a connectivity score. Bottom: The frame with the highest connectivity score is restored (yellow) to bridge gaps.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Key Results -->
+<section>
+  <div class="container">
+    <h2>Key Results</h2>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">44%</div>
+        <div class="label">Inference speedup<br>(90-frame sequences)</div>
+      </div>
+      <div class="stat">
+        <div class="num">3.8×</div>
+        <div class="label">Speedup<br>(480-frame sequences)</div>
+      </div>
+      <div class="stat">
+        <div class="num"><1%</div>
+        <div class="label">ATE degradation</div>
+      </div>
+      <div class="stat">
+        <div class="num">0</div>
+        <div class="label">Retraining required</div>
+      </div>
+    </div>
+
+    <p>DuToR achieves 44% speedup on VGGT (13.91s → 7.78s) and 25% on DA3 (6.92s → 5.16s) on TUM-Dynamics with less than 1% ATE degradation. At 480 frames, DuToR achieves 3.8× speedup over the full-attention baseline while using comparable memory.</p>
+
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Method</th>
+          <th>ATE ↓</th>
+          <th>RPE<sub>t</sub> ↓</th>
+          <th>RPE<sub>r</sub> ↓</th>
+          <th>Time (s) ↓</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td rowspan="3">VGGT</td><td>Original</td><td>0.0119</td><td><b>0.0099</b></td><td><b>0.31</b></td><td>13.91</td></tr>
+        <tr><td>+GoToHunt</td><td><b>0.0114</b></td><td>0.0100</td><td><b>0.31</b></td><td>12.23</td></tr>
+        <tr><td><b>+DuToR (ours)</b></td><td>0.0118</td><td><b>0.0099</b></td><td><b>0.31</b></td><td><b>7.78</b></td></tr>
+        <tr><td rowspan="3">DA3</td><td>Original</td><td>0.0139</td><td>0.0112</td><td>0.33</td><td>6.92</td></tr>
+        <tr><td>+GoToHunt</td><td>0.0132</td><td>0.0113</td><td>0.32</td><td>6.60</td></tr>
+        <tr><td><b>+DuToR (ours)</b></td><td><b>0.0125</b></td><td><b>0.0109</b></td><td><b>0.32</b></td><td><b>5.16</b></td></tr>
+      </tbody>
+    </table>
+
+    <figure>
+      <img src="fig/heads_3way_1k_gt_da3_dutor.png" alt="3DGS novel-view rendering comparison">
+      <figcaption><b>3DGS novel-view rendering comparison.</b> Ground truth, DA3 baseline, and DuToR on the Heads sequence from 7-Scenes. DuToR preserves rendering quality close to the full-attention baseline despite token reduction.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="fig/cam_token_attention.png" alt="Camera-token cross-attention">
+      <figcaption><b>Camera-token cross-attention.</b> The camera token's attention concentrates on structurally distinct regions (desk edges, ceiling trusses, monitor borders) across different attention layers, confirming it as a non-degenerate geometric cue for representative selection.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- BibTeX -->
+<section>
+  <div class="container">
+    <h2>Citation</h2>
+    <p>If you find this work useful, please cite:</p>
+    <div class="bibtex">@inproceedings{dutor2027,
+  title     = {DuToR: Dual Token Reduction for Efficient Feed-Forward 3D Reconstruction},
+  author    = {Anonymous},
+  booktitle = {IEEE Conference on Virtual Reality and 3D User Interfaces (IEEE VR)},
+  year      = {2027}
+}</div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    DuToR: Dual Token Reduction for Efficient Feed-Forward 3D Reconstruction — IEEE VR 2027 Submission
+  </div>
+</footer>
+
+</body>
+</html>

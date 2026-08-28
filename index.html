@@ -184,6 +184,28 @@
     font-size: 0.85em;
   }
 
+  /* Scroll fade-in */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* TL;DR */
+  .tldr {
+    background: var(--light);
+    border-left: 4px solid var(--blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    font-size: 1.15em;
+    margin: 20px 0;
+  }
+  .tldr b { color: var(--navy); }
+
   @media (max-width: 600px) {
     .hero h1 { font-size: 1.5em; }
     .cards, .stats { flex-direction: column; }
@@ -218,28 +240,18 @@
   </div>
 </div>
 
-<!-- Abstract -->
-<section>
+<!-- TL;DR -->
+<section class="fade-in">
   <div class="container">
-    <h2>Abstract</h2>
-    <p>
-      Feed-forward 3D reconstruction transformers jointly predict camera poses, point maps, and depth maps from multiple views in a single forward pass, but their global attention scales quadratically with token count.
-      This latency is the key barrier to running such models on-device for augmented and virtual reality (AR/VR), where strict motion-to-photon latency budgets apply.
-    </p>
-    <p>
-      We propose <b>DuToR</b>, a training-free framework that exploits redundancy at two levels — across frames and within frames — using only the model's own intermediate features, with no external scene descriptor.
-      For inter-frame selection, Farthest Point Sampling on frame descriptors selects K diverse frames, while connectivity scoring preserves geometric overlap and dynamically restores dropped frames.
-      For intra-frame selection, a fovea ring budget allocation partitions the patch grid into concentric rings and allocates higher cluster density to the center, and per-layer K-means clustering on key features selects representatives.
-      Together, these reduce global attention from quadratic to linear in the number of selected tokens, without retraining.
-    </p>
-    <p>
-      Experiments across two models (DA3, VGGT) and four benchmarks show DuToR achieves <b>44% inference speedup</b> on 90-frame sequences and <b>3.8× speedup</b> on 480-frame sequences with less than 1% ATE degradation, advancing feed-forward 3D reconstruction toward the latency targets of on-device AR/VR.
-    </p>
+    <h2>TL;DR</h2>
+    <div class="tldr">
+      <b>DuToR</b> is a training-free framework that reduces global attention in feed-forward 3D reconstruction transformers from quadratic to linear by exploiting redundancy at two levels — selecting diverse keyframes via Farthest Point Sampling and compressing tokens via foveated K-means clustering — achieving 44% speedup with less than 1% accuracy loss.
+    </div>
   </div>
 </section>
 
 <!-- Problem -->
-<section>
+<section class="fade-in">
   <div class="container">
     <h2>Problem & Motivation</h2>
     <p>
@@ -256,7 +268,7 @@
 </section>
 
 <!-- Method -->
-<section>
+<section class="fade-in">
   <div class="container">
     <h2>Method</h2>
     <p>
@@ -292,7 +304,7 @@
 </section>
 
 <!-- Key Results -->
-<section>
+<section class="fade-in">
   <div class="container">
     <h2>Key Results</h2>
 
@@ -351,7 +363,7 @@
 </section>
 
 <!-- BibTeX -->
-<section>
+<section class="fade-in">
   <div class="container">
     <h2>Citation</h2>
     <p>If you find this work useful, please cite:</p>
@@ -370,6 +382,18 @@
     DuToR: Dual Token Reduction for Efficient Feed-Forward 3D Reconstruction — IEEE VR 2027 Submission
   </div>
 </footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
 
 </body>
 </html>
